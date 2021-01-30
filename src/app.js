@@ -23,7 +23,7 @@ app.use(bodyParser.urlencoded({ extended: true}));
 
 // Edit this for the usecases.
 const fromEmail   = "hello@example.com";
-const portToServe = 3000;
+const portToServe = appConfig.port || 80;
 
 // Instantiate SES.
 const ses = new aws.SES();
@@ -130,7 +130,7 @@ app.post('/send', (req, res) => {
 });
 
 // Start server.
-const server = app.listen(portToServe || 80, function () {
+const server = app.listen(portToServe, function () {
     const host = server.address().address;
     const port = server.address().port;
 
