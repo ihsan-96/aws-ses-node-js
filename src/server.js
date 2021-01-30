@@ -50,7 +50,7 @@ class Server {
             stoperPromises.push(serviceStoppers[key]);
         }
 
-        return Promise.allSettled(stoperPromises);
+        return Promise.all(stoperPromises);
     }
 }
 
