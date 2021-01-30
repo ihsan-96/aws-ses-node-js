@@ -8,7 +8,7 @@ exports.addMailToBounced = async (mailId, log) => {
 
     mongo.updateRestrictedMails();
 
-    return updated;
+    return updated && updated.result;
 }
 
 exports.addMailToComplaint = async (mailId, complaint, log) => {
@@ -20,7 +20,7 @@ exports.addMailToComplaint = async (mailId, complaint, log) => {
 
     mongo.updateRestrictedMails();
 
-    return [updatedConfig, updatedComplaint];
+    return [updatedConfig && updatedConfig.result, updatedComplaint && updatedComplaint.result];
 }
 
 exports.validateDestination = (destination, log) => {
