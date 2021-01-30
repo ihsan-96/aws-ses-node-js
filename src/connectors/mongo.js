@@ -6,6 +6,7 @@ class Mongo {
 
     constructor() {
         this.db = {};
+        this.client = {};
         this.log = null;
         this.restrictedMails = new Set();
     }
@@ -16,12 +17,13 @@ class Mongo {
     
     async init(log) {
         this.log = log;
-        this.db = await mongo.connect(appConfig.mongo.url || 'mongodb://localhost:27017');
+        this.client = await mongo.connect(appConfig.mongo.url || 'mongodb://localhost:27017');
+        this.db = this.client.db('mailer');
     }
 
     async close() {
-        if (this.db.close) {
-            return this.db.close();
+        if (this.client.close) {
+            return this.client.close();
         } else {
             return Promise.resolve();
         }
