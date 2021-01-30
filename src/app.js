@@ -118,10 +118,10 @@ app.post('/send', (req, res) => {
         ReplyToAddresses: [
             appConfig.mail.replyTo
         ], 
-        ReturnPath: '', 
-        ReturnPathArn: '', 
-        Source: appConfig.mail.from, 
-        SourceArn: ''
+        // ReturnPath: '', 
+        // ReturnPathArn: '', 
+        // SourceArn: ''
+        Source: appConfig.mail.from
     };
     
     ses.sendEmail(params, (err, body) => {
