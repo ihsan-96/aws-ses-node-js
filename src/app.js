@@ -128,7 +128,7 @@ app.post('/send', (req, res) => {
         if (err) {
             log.error({error: err.stack, mail: params}, 'Error Occured while sending mail')
         } else {
-            log.info(data, 'Mail sent!')
+            log.info(body, 'Mail sent!')
         }
     });
 });
