@@ -180,7 +180,7 @@ Server.start().then(() => {
         const host = server.address().address;
         const port = server.address().port;
 
-        log.info('AWS SES example app listening at http://%s:%s', host, port);
+        log.info('AWS SES mail app listening at http://%s:%s', host, port);
     });
 }).catch(e => {
     log.error(e, 'Something Broke');
