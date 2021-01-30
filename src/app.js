@@ -12,7 +12,7 @@ const bodyParser = require('body-parser');
 aws.config.loadFromPath(__dirname + '/aws-config.json');
 
 // Loading config
-const appConfig = require('./app-config-sample.js');
+const appConfig = require('./app-config.js');
 
 // Using generic middlewares
 app.use(compression());
