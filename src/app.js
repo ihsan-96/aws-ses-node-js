@@ -31,7 +31,11 @@ const ses = new aws.SES();
 // Initialising logger
 const log = bunyan.createLogger({
     name: appConfig.logging.name,
-    path: appConfig.logging.path
+    streams: [
+        {
+            path: appConfig.logging.path
+        }
+    ]
 });
 
 // Health Check
