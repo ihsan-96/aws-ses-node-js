@@ -10,7 +10,7 @@ class Mongo {
         this.restrictedMails = new Set();
     }
 
-    get db() {
+    getdb() {
         return this.db;
     }
     
@@ -27,12 +27,12 @@ class Mongo {
         }
     }
 
-    updateRestrictedMails() {
+    async updateRestrictedMails() {
         const config = await this.db.collection('config').findOne({_id:1});
         this.restrictedMails = new Set(...config.bounced_mails, ...config.complained_mails);
     }
 
-    get restrictedMails() {
+    getRestrictedMails() {
         return this.restrictedMails;
     }
 }
