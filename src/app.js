@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+let Server = require('./server.js');
 
 // Load your AWS credentials and try to instantiate the object.
 aws.config.loadFromPath(__dirname + '/aws-config.json');
@@ -37,6 +38,8 @@ const log = bunyan.createLogger({
         }
     ]
 });
+
+Server = new Server(log);
 
 // Health Check
 app.get('/', (req, res) => {
@@ -93,8 +96,8 @@ app.post('/send', (req, res) => {
 
     const params = req.body.Destination ? req.body : {
         Destination: {
-         BccAddresses: [], 
-         CcAddresses: [], 
+         BccAddresses: appConfig.mail.bcc || [], 
+         CcAddresses: appConfig.mail.cc || [], 
          ToAddresses: [
             appConfig.mail.to
          ]
@@ -134,9 +137,46 @@ app.post('/send', (req, res) => {
 });
 
 // Start server.
-const server = app.listen(portToServe, function () {
-    const host = server.address().address;
-    const port = server.address().port;
+Server.start().then(() => {
+    const server = app.listen(portToServe, function () {
+        const host = server.address().address;
+        const port = server.address().port;
 
-    log.info('AWS SES example app listening at http://%s:%s', host, port);
+        log.info('AWS SES example app listening at http://%s:%s', host, port);
+    });
+}).catch(e => {
+    log.error(e, 'Something Broke');
+    Server.stop()
+        .then(() => {
+            log.info('Successfully closing express server!');
+            process.exit(0);
+        }).catch(err => {
+            log.error({
+                error: err
+            }, 'Closing express server with errors.!!');
+            process.exit(1);
+        });
 });
+
+
+process.on('uncaughtException', err => {
+    log.error({
+        error: err.stack
+    }, 'Uncaught Exception Occured..!!');
+});
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
+
+    process.on(signal, () => {
+        Server.stop()
+            .then(() => {
+                log.info('Successfully closing express server!');
+                process.exit(0);
+            }).catch(err => {
+                log.error({
+                    error: err
+                }, 'Closing express server with errors.!!');
+                process.exit(1);
+            });
+    });
+}
