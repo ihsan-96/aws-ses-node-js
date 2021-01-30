@@ -1,21 +1,50 @@
 // Require objects.
-var express = require('express');
-var app     = express();
-var aws     = require('aws-sdk');
+const express = require('express');
+const app     = express();
+const aws     = require('aws-sdk');
+const bunyan = require('bunyan');
+const helmet = require('helmet');
+const cors = require('cors');
+const compression = require('compression');
+const bodyParser = require('body-parser');
 
-// Edit this with YOUR email address.
-var email   = "hello@example.com";
-    
 // Load your AWS credentials and try to instantiate the object.
-aws.config.loadFromPath(__dirname + '/config.json');
+aws.config.loadFromPath(__dirname + '/aws-config.json');
+
+// Loading config
+const appConfig = require('./app-config-sample.js');
+
+// Using generic middlewares
+app.use(compression());
+app.use(helmet());
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true}));
+
+// Edit this for the usecases.
+const fromEmail   = "hello@example.com";
+const portToServe = 3000;
 
 // Instantiate SES.
-var ses = new aws.SES();
+const ses = new aws.SES();
+
+// Initialising logger
+const log = bunyan.createLogger({
+    name: appConfig.logging.name,
+    path: appConfig.logging.path
+});
+
+// Health Check
+app.get('/', (req, res) => {
+    res.json({
+        status: 'OK'
+    });
+});
 
 // Verify email addresses.
 app.get('/verify', function (req, res) {
-    var params = {
-        EmailAddress: email
+    const params = {
+        EmailAddress: fromEmail
     };
     
     ses.verifyEmailAddress(params, function(err, data) {
@@ -42,8 +71,8 @@ app.get('/list', function (req, res) {
 
 // Deleting verified email addresses.
 app.get('/delete', function (req, res) {
-    var params = {
-        EmailAddress: email
+    const params = {
+        EmailAddress: fromEmail
     };
 
     ses.deleteVerifiedEmailAddress(params, function(err, data) {
@@ -56,42 +85,54 @@ app.get('/delete', function (req, res) {
     });
 });
 
-// Sending RAW email including an attachment.
-app.get('/send', function (req, res) {
-    var ses_mail = "From: 'AWS Tutorial Series' <" + email + ">\n";
-    ses_mail = ses_mail + "To: " + email + "\n";
-    ses_mail = ses_mail + "Subject: AWS SES Attachment Example\n";
-    ses_mail = ses_mail + "MIME-Version: 1.0\n";
-    ses_mail = ses_mail + "Content-Type: multipart/mixed; boundary=\"NextPart\"\n\n";
-    ses_mail = ses_mail + "--NextPart\n";
-    ses_mail = ses_mail + "Content-Type: text/html; charset=us-ascii\n\n";
-    ses_mail = ses_mail + "This is the body of the email.\n\n";
-    ses_mail = ses_mail + "--NextPart\n";
-    ses_mail = ses_mail + "Content-Type: text/plain;\n";
-    ses_mail = ses_mail + "Content-Disposition: attachment; filename=\"attachment.txt\"\n\n";
-    ses_mail = ses_mail + "AWS Tutorial Series - Really cool file attachment!" + "\n\n";
-    ses_mail = ses_mail + "--NextPart--";
-    
-    var params = {
-        RawMessage: { Data: new Buffer(ses_mail) },
-        Destinations: [ email ],
-        Source: "'AWS Tutorial Series' <" + email + ">'"
+app.post('/send', (req, res) => {
+
+    const params = req.body.Destination ? req.body : {
+        Destination: {
+         BccAddresses: [], 
+         CcAddresses: [], 
+         ToAddresses: [
+            appConfig.mail.to
+         ]
+        }, 
+        Message: {
+         Body: {
+          Html: {
+           Charset: 'UTF-8', 
+           Data: appConfig.mail.html
+          }, 
+          Text: {
+           Charset: 'UTF-8', 
+           Data: appConfig.mail.text
+          }
+         }, 
+         Subject: {
+          Charset: 'UTF-8', 
+          Data: appConfig.mail.subject
+         }
+        }, 
+        ReplyToAddresses: [
+            appConfig.mail.replyTo
+        ], 
+        ReturnPath: '', 
+        ReturnPathArn: '', 
+        Source: appConfig.mail.from, 
+        SourceArn: ''
     };
     
-    ses.sendRawEmail(params, function(err, data) {
-        if(err) {
-            res.send(err);
-        } 
-        else {
-            res.send(data);
-        }           
+    ses.sendEmail(params, (err, body) => {
+        if (err) {
+            log.error({error: err.stack, mail: params}, 'Error Occured while sending mail')
+        } else {
+            log.info(data, 'Mail sent!')
+        }
     });
 });
 
 // Start server.
-var server = app.listen(80, function () {
-    var host = server.address().address;
-    var port = server.address().port;
+const server = app.listen(portToServe || 80, function () {
+    const host = server.address().address;
+    const port = server.address().port;
 
-    console.log('AWS SES example app listening at http://%s:%s', host, port);
+    log.info('AWS SES example app listening at http://%s:%s', host, port);
 });
