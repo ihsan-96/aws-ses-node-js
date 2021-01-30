@@ -24,7 +24,6 @@ app.use(helmet());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
-app.use(Server.prepareRequest);
 
 // Edit this for the usecases.
 const fromEmail   = "hello@example.com";
@@ -44,6 +43,7 @@ const log = bunyan.createLogger({
 });
 
 Server = new Server(log);
+app.use(Server.prepareRequest.bind(Server));
 
 // Health Check
 app.get('/', (req, res) => {
