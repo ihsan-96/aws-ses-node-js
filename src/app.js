@@ -167,9 +167,11 @@ app.post('/send', (req, res) => {
     
     ses.sendEmail(params, (err, body) => {
         if (err) {
-            log.error({error: err.stack, mail: params}, 'Error Occured while sending mail')
+            log.error({error: err.stack, mail: params}, 'Error Occured while sending mail');
+            res.status(400).json({error: err.console});
         } else {
-            log.info(body, 'Mail sent!')
+            log.info(body, 'Mail sent!');
+            res.json(body);
         }
     });
 });

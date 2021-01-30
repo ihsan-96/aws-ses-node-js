@@ -19,6 +19,9 @@ class Mongo {
         this.log = log;
         this.client = await mongo.connect(appConfig.mongo.url || 'mongodb://localhost:27017');
         this.db = this.client.db('mailer');
+
+        const config = await this.db.collection('config').findOne({_id:1});
+        this.restrictedMails = new Set([...config.bounced_mails, ...config.complained_mails]);
     }
 
     async close() {
@@ -31,7 +34,7 @@ class Mongo {
 
     async updateRestrictedMails() {
         const config = await this.db.collection('config').findOne({_id:1});
-        this.restrictedMails = new Set(...config.bounced_mails, ...config.complained_mails);
+        this.restrictedMails = new Set([...config.bounced_mails, ...config.complained_mails]);
     }
 
     getRestrictedMails() {
